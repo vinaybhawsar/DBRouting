@@ -67,22 +67,30 @@ DB_Mapping = {
 
 Create a middleware to get the database name from host name. [docs](https://docs.djangoproject.com/en/1.8/topics/http/middleware/)
 ```
+import threading
 from django.conf import settings
 from django.utils.deprecation import MiddlewareMixin
 
+threading_obj = threading.local()
+
 class RouterMiddleware(MiddlewareMixin):
     def process_view( self, request, view_func, args, kwargs ):
-        HOST_NAME = request.get_host()
+        threading_obj.host_name = request.get_host()
 
     def process_request(self, request):
-        HOST_NAME = request.get_host()
+        threading_obj.host_name = request.get_host()
 ```
 
 Create a database router to auto select.
 ```
+DB_Mapping = {
+    "HOST1": "DB1",
+    "HOST2": "DB2",
+}
+
 class DatabaseRouter(object):
     def _default_db( self ):
-        if HOST_NAME in settings.DATABASES.keys():
+        if threading_obj.host_name in settings.DATABASES.keys():
             return DB_Mapping[HOST_NAME]
         else:
             return 'default'
